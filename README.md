@@ -1,44 +1,29 @@
-<div>
-<a href="https://www.mischianti.org/forums/forum/mischiantis-libraries/ebyte-lora-e220-uart-devices-llcc68/"><img
-  src="https://github.com/xreef/LoRa_E32_Series_Library/raw/master/resources/buttonSupportForumEnglish.png" alt="Support forum EByte e220 English"
-   align="right"></a>
-</div>
-<div>
-<a href="https://www.mischianti.org/it/forums/forum/le-librerie-di-mischianti/ebyte-e220-dispositivi-lora-uart-llcc68/"><img
-  src="https://github.com/xreef/LoRa_E32_Series_Library/raw/master/resources/buttonSupportForumItaliano.png" alt="Forum supporto EByte e220 italiano"
-  align="right"></a>
-</div>
-
-
-</br></br>
-
-# EBYTE LoRa E220 devices micropython library (LLCC68)   
+# EBYTE LoRa E220 devices CircuitPython library (LLCC68)
 
 
 ### Changelog
- - 2023-04-18 0.0.3 Fix regular expression models
- - 2023-04-18 0.0.2 Distinct frequency from 900MHz and 915Mhz devices [Forum](https://www.mischianti.org/forums/topic/e32-915t-and-e32-900t-modules/)
- - 2023-03-21 0.0.1 Fully functional library
+ - 2023-11-09 0.0.1 Working library. Not fully tested.
 
-### Installation
+<!-- ### Installation
 To install the library execute the following command:
 
 ```bash
 pip install ebyte-lora-e220
-```
+``` -->
 
 ### Library usage
-Here an example of constructor, you must pass the UART interface and (if you want, but It's reccomended)
+Here an example of constructor, you must pass the UART interface and (if you want, but it's reccomended)
 the AUX pin, M0 and M1.
 
 #### Initialization
 
 ```python
+import board
+from busio import UART
 from lora_e220 import LoRaE220
-from machine import UART
 
-uart2 = UART(2)
-lora = LoRaE220('400T22D', uart2, aux_pin=15, m0_pin=21, m1_pin=19)
+uart2 = UART(board.GP0, board.GP1)
+lora = LoRaE220('400T22D', uart2, aux_pin=15, m0_pin=21, m1_pin=20)
 ```
 #### Start the module transmission
 
@@ -203,7 +188,21 @@ fixed
 ```
 
 
-# This is a porting of the Arduino library for EBYTE LoRa E220 devices to Micropython
+# This is a porting of the [MicroPython library for EBYTE LoRa E220 devices](https://github.com/xreef/EByte_LoRa_E220_micropython_library) (which itself is a port from the [Arduino version](https://github.com/xreef/EByte_LoRa_E220_Series_Library)) to CircuitPython
+
+These support forums are for the original versions of the code, written by [xreef](https://github.com/xreef). Any issues related to CircuitPython or your microcontroller should be raised in the issues board in this repo.
+<div>
+<a href="https://www.mischianti.org/forums/forum/mischiantis-libraries/ebyte-lora-e220-uart-devices-llcc68/"><img
+  src="https://github.com/xreef/LoRa_E32_Series_Library/raw/master/resources/buttonSupportForumEnglish.png" alt="Support forum EByte e220 English"
+   align="right"></a>
+</div>
+<div>
+<a href="https://www.mischianti.org/it/forums/forum/le-librerie-di-mischianti/ebyte-e220-dispositivi-lora-uart-llcc68/"><img
+  src="https://github.com/xreef/LoRa_E32_Series_Library/raw/master/resources/buttonSupportForumItaliano.png" alt="Forum supporto EByte e220 italiano"
+  align="right"></a>
+</div>
+
+</br></br>
 
 ## Tutorial of the original library  
 
