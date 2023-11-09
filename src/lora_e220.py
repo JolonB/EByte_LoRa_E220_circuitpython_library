@@ -40,10 +40,11 @@ from lora_e220_constants import UARTParity, UARTBaudRate, TransmissionPower, Fix
 from lora_e220_operation_constant import ResponseStatusCode, ModeType, ProgramCommand, SerialUARTBaudRate, \
     PacketLength, RegisterAddress
 
-import machine
-import ure
-import utime
-import ujson
+import busio
+import digitalio
+import re
+import adafruit_ticks as ticks
+import json
 
 
 class Logger:
@@ -325,7 +326,7 @@ class LoRaE220:
 
         pattern = '^(230|400|900)(T|R|MM|M)(22|30)[SD]$'
 
-        model_regex = ure.compile(pattern)
+        model_regex = re.compile(pattern)
         if not model_regex.match(model):
             raise ValueError('Invalid model')
 
@@ -340,26 +341,28 @@ class LoRaE220:
         self.uart_baudrate = uart_baudrate
         self.mode = None
 
-    # model is like 433T20D or 433T27D or 433T30D or 868T20S or 868T27S or 868T30S
-    # def __init__(self, model, tx_pin, rx_pin, uart_id=0, aux_pin=None, m0_pin=None, m1_pin=None,
-    #              uart_baudrate=SerialUARTBaudRate.BPS_RATE_9600):
-    #     self.uart = machine.UART(uart_id, tx=tx_pin, rx=rx_pin)
-    #     super().__init__(model, self.uart, aux_pin, m0_pin, m1_pin, uart_baudrate)
+    # TODO is this even a good way to do it???
+    @staticmethod
+    def get_uart(tx, rx, *, baudrate=9600, uart_parity=UARTParity.MODE_00_8N1):
+        return busio.UART(tx, rx, baudrate=baudrate, parity=UARTParity.get_uart_value(uart_parity))
 
-    def begin(self, uart_parity=UARTParity.MODE_00_8N1):
-        self.uart.init(baudrate=self.uart_baudrate, bits=8, parity=UARTParity.get_uart_value(uart_parity), stop=1,
-                       timeout=1000, timeout_char=1000)
+    def begin(self):
+        self.uart.baudrate = self.uart_baudrate
 
         self.m0 = None
         self.m1 = None
         self.aux = None
         if self.aux_pin is not None:
-            self.aux = machine.Pin(self.aux_pin, machine.Pin.IN)
+            self.aux = digitalio.DigitalInOut(self.aux_pin)
+            self.aux.direction = digitalio.Direction.INPUT
         if self.m0_pin is not None and self.m1_pin is not None:
-            self.m0 = machine.Pin(self.m0_pin, machine.Pin.OUT)
-            self.m1 = machine.Pin(self.m1_pin, machine.Pin.OUT)
-            self.m0.on()
-            self.m1.on()
+            self.m0 = digitalio.DigitalInOut(self.m0_pin)
+            self.m0.direction = digitalio.Direction.OUTPUT
+            self.m1 = digitalio.DigitalInOut(self.m1_pin)
+            self.m1.direction = digitalio.Direction.OUTPUT
+
+            self.m0.value = True
+            self.m1.value = True
 
         # self.uart.timeout(1000)
 
@@ -378,23 +381,23 @@ class LoRaE220:
         else:
             if mode == ModeType.MODE_0_NORMAL:
                 # Mode 0 | normal operation
-                self.m0.off()
-                self.m1.off()
+                self.m0.value = False
+                self.m1.value = False
                 logger.debug("MODE NORMAL!")
             elif mode == ModeType.MODE_1_WOR_TRANSMITTER:
                 # Mode 1 | wake-up operation
-                self.m0.on()
-                self.m1.off()
+                self.m0.value = True
+                self.m1.value = False
                 logger.debug("MODE WOR TRANSMITTER!")
             elif mode == ModeType.MODE_2_POWER_SAVING:
                 # Mode 2 | power saving operation
-                self.m0.off()
-                self.m1.on()
+                self.m0.value = False
+                self.m1.value = True
                 logger.debug("MODE WOR RECEIVER!")
             elif mode == ModeType.MODE_3_CONFIGURATION:
                 # Mode 3 | Setting operation
-                self.m0.on()
-                self.m1.on()
+                self.m0.value = True
+                self.m1.value = True
                 logger.debug("MODE PROGRAM!")
             else:
                 return ResponseStatusCode.ERR_E220_INVALID_PARAM
@@ -409,25 +412,25 @@ class LoRaE220:
 
     @staticmethod
     def managed_delay(timeout):
-        t = utime.ticks_ms()
+        t = ticks.ticks_ms()
 
-        # make darn sure ticks_ms() is not about to reach max data type limit and start over
-        if utime.ticks_add(t, timeout) == 0:
-            t = 0
+        # # make darn sure ticks_ms() is not about to reach max data type limit and start over
+        # if ticks.ticks_add(t, timeout) == 0:
+        #     t = 0
 
-        while utime.ticks_diff(utime.ticks_ms(), t) < timeout:
+        while ticks.ticks_diff(ticks.ticks_ms(), t) < timeout:
             pass
 
     def wait_complete_response(self, timeout, wait_no_aux=100) -> ResponseStatusCode:
         result = ResponseStatusCode.E220_SUCCESS
-        t = utime.ticks_ms()
+        t = ticks.ticks_ms()
 
-        if utime.ticks_add(t, timeout) == 0:
-            t = 0
+        # if ticks.ticks_add(t, timeout) == 0:
+        #     t = 0
 
         if self.aux is not None:
-            while self.aux.value() == 0:
-                if utime.ticks_diff(utime.ticks_ms(), t) > timeout:
+            while self.aux.value == False:
+                if ticks.ticks_diff(ticks.ticks_ms(), t) > timeout:
                     result = ResponseStatusCode.ERR_E220_TIMEOUT
                     logger.debug("Timeout error!")
                     return result
@@ -604,7 +607,7 @@ class LoRaE220:
             return code, None, None
 
         try:
-            msg = ujson.loads(msg)
+            msg = json.loads(msg)
         except Exception as e:
             logger.error("Error: {}".format(e))
             return ResponseStatusCode.ERR_E220_JSON_PARSE, None, None
@@ -653,7 +656,7 @@ class LoRaE220:
         return self._send_message(message, BROADCAST_ADDRESS, BROADCAST_ADDRESS, CHAN)
 
     def send_broadcast_dict(self, CHAN, dict_message) -> ResponseStatusCode:
-        message = ujson.dumps(dict_message)
+        message = json.dumps(dict_message)
         return self._send_message(message, BROADCAST_ADDRESS, BROADCAST_ADDRESS, CHAN)
 
     def send_transparent_message(self, message) -> ResponseStatusCode:
@@ -663,11 +666,11 @@ class LoRaE220:
         return self._send_message(message, ADDH, ADDL, CHAN)
 
     def send_fixed_dict(self, ADDH, ADDL, CHAN, dict_message) -> ResponseStatusCode:
-        message = ujson.dumps(dict_message)
+        message = json.dumps(dict_message)
         return self._send_message(message, ADDH, ADDL, CHAN)
 
     def send_transparent_dict(self, dict_message) -> ResponseStatusCode:
-        message = ujson.dumps(dict_message)
+        message = json.dumps(dict_message)
         return self._send_message(message)
 
     def _send_message(self, message, ADDH=None, ADDL=None, CHAN=None) -> ResponseStatusCode:
@@ -708,7 +711,7 @@ class LoRaE220:
         return result
 
     def available(self) -> int:
-        return self.uart.any()
+        return self.uart.inwaiting
 
     def end(self) -> ResponseStatusCode:
         try:
