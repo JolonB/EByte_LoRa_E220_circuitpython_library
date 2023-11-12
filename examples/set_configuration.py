@@ -2,30 +2,34 @@
 # Website: www.mischianti.org
 #
 # Description:
-# This script demonstrates how to use the E220 LoRa module with MicroPython.
+# This script demonstrates how to use the E220 LoRa module with CircuitPython.
 # It initializes the module, retrieves the current configuration,
 # sets a new configuration, and restores the default configuration.
 # It also includes examples of sending and receiving data using the module.
 #
-# Note: This code was written and tested using MicroPython on a ESP32 board.
+# Note: This code was written and tested using CircuitPython on a RPi Pico board.
 #       It works with other boards, but you may need to change the UART pins.
+
+import board
+from busio import UART
 
 from lora_e220 import LoRaE220, print_configuration, Configuration
 from lora_e220_constants import OperatingFrequency, FixedTransmission, TransmissionPower, \
     AirDataRate, UARTParity, UARTBaudRate, RssiAmbientNoiseEnable, SubPacketSetting, WorPeriod, \
     LbtEnableByte, RssiEnableByte, TransmissionPower22
 from lora_e220_operation_constant import ResponseStatusCode
-from machine import UART
+
+MODULE_MODEL = "900T22D"
 
 # Create a UART object to communicate with the LoRa module
-uart2 = UART(2)
+uart = UART(board.GP4, board.GP5, baudrate=9600)
 
 # Create a LoRaE220 object, passing the UART object and pin configurations
-lora = LoRaE220('400T22D', uart2, aux_pin=15, m0_pin=21, m1_pin=19)
+lora = LoRaE220(MODULE_MODEL, uart, aux_pin=board.GP10, m0_pin=board.GP11, m1_pin=board.GP12)
 
 # Initialize the LoRa module and print the initialization status code
 code = lora.begin()
-print("Initialization: {}", ResponseStatusCode.get_description(code))
+print("Initialization: {}".format(ResponseStatusCode.get_description(code)))
 
 ##########################################################################################
 # GET CONFIGURATION
@@ -33,7 +37,7 @@ print("Initialization: {}", ResponseStatusCode.get_description(code))
 
 # Retrieve the current configuration of the LoRa module and print it to the console
 code, configuration = lora.get_configuration()
-print("Retrieve configuration: {}", ResponseStatusCode.get_description(code))
+print("Retrieve configuration: {}".format(ResponseStatusCode.get_description(code)))
 print("------------- CONFIGURATION BEFORE CHANGE -------------")
 print_configuration(configuration)
 
@@ -43,7 +47,7 @@ print_configuration(configuration)
 ##########################################################################################
 
 # Create a new Configuration object with the desired settings
-configuration_to_set = Configuration('400T22D')
+configuration_to_set = Configuration(MODULE_MODEL)
 configuration_to_set.ADDL = 0x02
 configuration_to_set.ADDH = 0x01
 configuration_to_set.CHAN = 23
@@ -52,7 +56,7 @@ configuration_to_set.SPED.airDataRate = AirDataRate.AIR_DATA_RATE_100_96
 configuration_to_set.SPED.uartParity = UARTParity.MODE_00_8N1
 configuration_to_set.SPED.uartBaudRate = UARTBaudRate.BPS_9600
 
-configuration_to_set.OPTION.transmissionPower = TransmissionPower('400T22D').\
+configuration_to_set.OPTION.transmissionPower = TransmissionPower(MODULE_MODEL).\
                                                     get_transmission_power().POWER_10
 # or
 # configuration_to_set.OPTION.transmissionPower = TransmissionPower22.POWER_10
@@ -82,7 +86,7 @@ print_configuration(confSetted)
 
 # Set the configuration to default values and print the updated configuration to the console
 print("------------- RESTORE ALL DEFAULT -------------")
-configuration_to_set = Configuration('400T22D')
+configuration_to_set = Configuration(MODULE_MODEL)
 code, confSetted = lora.set_configuration(configuration_to_set)
 print(ResponseStatusCode.get_description(code))
 print_configuration(confSetted)

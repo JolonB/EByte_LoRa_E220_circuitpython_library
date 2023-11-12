@@ -2,29 +2,32 @@
 # Website: www.mischianti.org
 #
 # Description:
-# This script initializes the E220 LoRa module with MicroPython,
+# This script initializes the E220 LoRa module with CircuitPython,
 # retrieves the current configuration, and prints it to the console.
 # The code demonstrates how to use the LoRaE32 library to interact with the module and read its configuration.
 #
-# Note: This code was written and tested using MicroPython on an ESP32 board.
+# Note: This code was written and tested using CircuitPython on an RPi Pico board.
 #       It works with other boards, but you may need to change the UART pins.
 
 
-from machine import UART
+import board
+from busio import UART
 
 from lora_e220 import LoRaE220, print_configuration
 from lora_e220_operation_constant import ResponseStatusCode
 
-uart2 = UART(2)
+MODULE_MODEL = "900T22D"
 
-lora = LoRaE220('400T22D', uart2, aux_pin=15, m0_pin=21, m1_pin=19)
+uart = UART(board.GP4, board.GP5, baudrate=9600)
+
+lora = LoRaE220(MODULE_MODEL, uart, aux_pin=board.GP10, m0_pin=board.GP11, m1_pin=board.GP12)
 
 code = lora.begin()
-print("Initialization: {}", ResponseStatusCode.get_description(code))
+print("Initialization: {}".format(ResponseStatusCode.get_description(code)))
 
 code, configuration = lora.get_configuration()
 
-print("Retrieve configuration: {}", ResponseStatusCode.get_description(code))
+print("Retrieve configuration: {}".format(ResponseStatusCode.get_description(code)))
 
 print_configuration(configuration)
 

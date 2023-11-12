@@ -253,23 +253,23 @@ def print_configuration(configuration):
     print("")
     print("SpeedParityBit : ", bin(configuration.SPED.uartParity), " -> ",
           configuration.SPED.get_UART_parity_description())
-    print("SpeedUARTDatte : ", bin(configuration.SPED.uartBaudRate), " -> ", configuration.SPED.get_UART_baud_rate())
+    print("SpeedUARTDataRate : ", bin(configuration.SPED.uartBaudRate), " -> ", configuration.SPED.get_UART_baud_rate())
     print("SpeedAirDataRate : ", bin(configuration.SPED.airDataRate), " -> ", configuration.SPED.get_air_data_rate())
     print("")
-    print("OptionSubPacketSett: ", bin(configuration.OPTION.subPacketSetting), " -> ",
+    print("OptionSubPacketSett : ", bin(configuration.OPTION.subPacketSetting), " -> ",
           configuration.OPTION.get_sub_packet_setting())
     print("OptionTranPower : ", bin(configuration.OPTION.transmissionPower), " -> ",
           configuration.OPTION.get_transmission_power_description())
-    print("OptionRSSIAmbientNo: ", bin(configuration.OPTION.RSSIAmbientNoise), " -> ",
+    print("OptionRSSIAmbientNo : ", bin(configuration.OPTION.RSSIAmbientNoise), " -> ",
           configuration.OPTION.get_RSSI_ambient_noise_enable())
     print("")
     print("TransModeWORPeriod : ", bin(configuration.TRANSMISSION_MODE.WORPeriod), " -> ",
           configuration.TRANSMISSION_MODE.get_WOR_period_description())
     print("TransModeEnableLBT : ", bin(configuration.TRANSMISSION_MODE.enableLBT), " -> ",
           configuration.TRANSMISSION_MODE.get_LBT_enable_byte_description())
-    print("TransModeEnableRSSI: ", bin(configuration.TRANSMISSION_MODE.enableRSSI), " -> ",
+    print("TransModeEnableRSSI : ", bin(configuration.TRANSMISSION_MODE.enableRSSI), " -> ",
           configuration.TRANSMISSION_MODE.get_RSSI_enable_byte_description())
-    print("TransModeFixedTrans: ", bin(configuration.TRANSMISSION_MODE.fixedTransmission), " -> ",
+    print("TransModeFixedTrans : ", bin(configuration.TRANSMISSION_MODE.fixedTransmission), " -> ",
           configuration.TRANSMISSION_MODE.get_fixed_transmission_description())
     print("----------------------------------------")
 
@@ -711,7 +711,7 @@ class LoRaE220:
         return result
 
     def available(self) -> int:
-        return self.uart.inwaiting
+        return self.uart.in_waiting
 
     def end(self) -> ResponseStatusCode:
         try:
