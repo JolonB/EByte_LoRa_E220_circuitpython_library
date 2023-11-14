@@ -2,7 +2,8 @@
 
 
 ### Changelog
- - 2023-11-09 0.0.1 Working library. Not fully tested.
+- 2023-11-14 1.0.0 Functioning and tested on ESP32 and RPi Pico using 900T22D module.
+- 2023-11-09 0.0.1 Working library. Not fully tested.
 
 <!-- ### Installation
 To install the library execute the following command:
@@ -22,8 +23,8 @@ import board
 from busio import UART
 from lora_e220 import LoRaE220
 
-uart2 = UART(board.GP0, board.GP1)
-lora = LoRaE220('400T22D', uart2, aux_pin=15, m0_pin=21, m1_pin=20)
+uart = UART(board.GP4, board.GP5, baudrate=9600)
+lora = LoRaE220("900T22D", uart, aux_pin=board.GP10, m0_pin=board.GP11, m1_pin=board.GP12)
 ```
 #### Start the module transmission
 
@@ -32,7 +33,12 @@ code = lora.begin()
 print("Initialization: {}", ResponseStatusCode.get_description(code))
 ```
 
-#### Get Configuration
+#### Examples
+
+The following examples can also be found in the `examples` directory.
+Be sure to edit the `example_config.py` before running.
+
+##### Get Configuration
 
 ```python
 from lora_e220 import LoRaE220, print_configuration
@@ -69,7 +75,7 @@ TransModeFixedTrans:  0b0  ->  Transparent transmission (default)
 ----------------------------------------
 ```
 
-#### Set Configuration
+##### Set Configuration
 
 You can set only the desidered parameter, the other will be set to default value.
 ```python
@@ -106,9 +112,10 @@ code, confSetted = lora.set_configuration(configuration_to_set)
 I create a CONSTANTS class for each parameter, here a list:
 AirDataRate, UARTBaudRate, UARTParity, TransmissionPower, ForwardErrorCorrectionSwitch, WirelessWakeUpTime, IODriveMode, FixedTransmission
 
-#### Send string message
+##### Send string message
 
-Here an example of send data, you can pass a string 
+Here is an example of sending data, you can pass a string 
+
 ```python
 lora.send_transparent_message('pippo')
 ```
@@ -146,9 +153,10 @@ Success!
 pippo
 ```
 
-#### Send dictionary message
+##### Send dictionary message
 
-Here an example of send data, you can pass a dictionary
+Here is an example of sending data, you can pass a dictionary
+
 ```python
 lora.send_transparent_dict({'pippo': 'fixed', 'pippo2': 'fixed2'})
 ```
