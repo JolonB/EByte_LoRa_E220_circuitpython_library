@@ -24,11 +24,11 @@ from lora_e220_operation_constant import ResponseStatusCode
 
 from lora_e220_constants import FixedTransmission, RssiEnableByte
 
-MODULE_MODEL = "900T22D"
+from examples.example_config import MODULE_MODEL, UART_TX, UART_RX, LORA_AUX, LORA_M0, LORA_M1
 
 # Initialize the LoRaE220 module
-uart = UART(board.GP4, board.GP5, baudrate=9600)
-lora = LoRaE220(MODULE_MODEL, uart, aux_pin=board.GP10, m0_pin=board.GP11, m1_pin=board.GP12)
+uart = UART(UART_TX, UART_RX, baudrate=9600)
+lora = LoRaE220(MODULE_MODEL, uart, aux_pin=LORA_AUX, m0_pin=LORA_M0, m1_pin=LORA_M1)
 code = lora.begin()
 print("Initialization: {}".format(ResponseStatusCode.get_description(code)))
 
