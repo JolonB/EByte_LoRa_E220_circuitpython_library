@@ -121,9 +121,15 @@ class RssiAmbientNoiseEnable:
 
     @staticmethod
     def get_description(rssi_ambient_noise_enabled):
-        if rssi_ambient_noise_enabled == RssiAmbientNoiseEnable.RSSI_AMBIENT_NOISE_ENABLED:
+        if (
+            rssi_ambient_noise_enabled
+            == RssiAmbientNoiseEnable.RSSI_AMBIENT_NOISE_ENABLED
+        ):
             return "Enabled"
-        elif rssi_ambient_noise_enabled == RssiAmbientNoiseEnable.RSSI_AMBIENT_NOISE_DISABLED:
+        elif (
+            rssi_ambient_noise_enabled
+            == RssiAmbientNoiseEnable.RSSI_AMBIENT_NOISE_DISABLED
+        ):
             return "Disabled (default)"
         else:
             return "Invalid RSSI Ambient Noise enabled!"
@@ -173,7 +179,6 @@ class LbtEnableByte:
             return "Disabled (default)"
         else:
             return "Invalid LBT enable byte!"
-
 
 
 class RssiEnableByte:
@@ -269,13 +274,17 @@ class OperatingFrequency:
         if not isinstance(frequency, str):
             frequency = str(frequency)
 
-        freq_attr_name = 'FREQUENCY_' + frequency
+        freq_attr_name = "FREQUENCY_" + frequency
         freq_value = getattr(OperatingFrequency, freq_attr_name)
         return freq_value
 
     @staticmethod
     def get_frequency_dict():
-        frequency_dict = {name.split("_")[1]: value for name, value in vars(OperatingFrequency).items() if name.startswith('FREQUENCY_')}
+        frequency_dict = {
+            name.split("_")[1]: value
+            for name, value in vars(OperatingFrequency).items()
+            if name.startswith("FREQUENCY_")
+        }
         return frequency_dict
 
     # the frequency is the base element plus the channel

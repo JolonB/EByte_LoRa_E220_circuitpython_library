@@ -13,13 +13,30 @@
 import board
 from busio import UART
 
-from lora_e220 import LoRaE220, print_configuration, Configuration
-from lora_e220_constants import OperatingFrequency, FixedTransmission, TransmissionPower, \
-    AirDataRate, UARTParity, UARTBaudRate, RssiAmbientNoiseEnable, SubPacketSetting, WorPeriod, \
-    LbtEnableByte, RssiEnableByte, TransmissionPower22
+from examples.example_config import (
+    LORA_AUX,
+    LORA_M0,
+    LORA_M1,
+    MODULE_MODEL,
+    UART_RX,
+    UART_TX,
+)
+from lora_e220 import Configuration, LoRaE220, print_configuration
+from lora_e220_constants import (
+    AirDataRate,
+    FixedTransmission,
+    LbtEnableByte,
+    OperatingFrequency,
+    RssiAmbientNoiseEnable,
+    RssiEnableByte,
+    SubPacketSetting,
+    TransmissionPower,
+    TransmissionPower22,
+    UARTBaudRate,
+    UARTParity,
+    WorPeriod,
+)
 from lora_e220_operation_constant import ResponseStatusCode
-
-from examples.example_config import MODULE_MODEL, UART_TX, UART_RX, LORA_AUX, LORA_M0, LORA_M1
 
 # Create a UART object to communicate with the LoRa module
 uart = UART(UART_TX, UART_RX, baudrate=9600)
@@ -47,34 +64,35 @@ print_configuration(configuration)
 ##########################################################################################
 
 # Create a new Configuration object with the desired settings
-configuration_to_set = Configuration(MODULE_MODEL)
-configuration_to_set.ADDL = 0x02
-configuration_to_set.ADDH = 0x01
-configuration_to_set.CHAN = 23
+new_config = Configuration(MODULE_MODEL)
+new_config.ADDL = 0x02
+new_config.ADDH = 0x01
+new_config.CHAN = 23
 
-configuration_to_set.SPED.airDataRate = AirDataRate.AIR_DATA_RATE_100_96
-configuration_to_set.SPED.uartParity = UARTParity.MODE_00_8N1
-configuration_to_set.SPED.uartBaudRate = UARTBaudRate.BPS_9600
+new_config.SPED.airDataRate = AirDataRate.AIR_DATA_RATE_100_96
+new_config.SPED.uartParity = UARTParity.MODE_00_8N1
+new_config.SPED.uartBaudRate = UARTBaudRate.BPS_9600
 
-configuration_to_set.OPTION.transmissionPower = TransmissionPower(MODULE_MODEL).\
-                                                    get_transmission_power().POWER_10
+new_config.OPTION.transmissionPower = (
+    TransmissionPower(MODULE_MODEL).get_transmission_power().POWER_10
+)
 # or
-# configuration_to_set.OPTION.transmissionPower = TransmissionPower22.POWER_10
+# new_config.OPTION.transmissionPower = TransmissionPower22.POWER_10
 
-configuration_to_set.OPTION.RSSIAmbientNoise = RssiAmbientNoiseEnable.RSSI_AMBIENT_NOISE_ENABLED
-configuration_to_set.OPTION.subPacketSetting = SubPacketSetting.SPS_064_10
+new_config.OPTION.RSSIAmbientNoise = RssiAmbientNoiseEnable.RSSI_AMBIENT_NOISE_ENABLED
+new_config.OPTION.subPacketSetting = SubPacketSetting.SPS_064_10
 
-configuration_to_set.TRANSMISSION_MODE.fixedTransmission = FixedTransmission.FIXED_TRANSMISSION
-configuration_to_set.TRANSMISSION_MODE.WORPeriod = WorPeriod.WOR_1500_010
-configuration_to_set.TRANSMISSION_MODE.enableLBT = LbtEnableByte.LBT_DISABLED
-configuration_to_set.TRANSMISSION_MODE.enableRSSI = RssiEnableByte.RSSI_ENABLED
+new_config.TRANSMISSION_MODE.fixedTransmission = FixedTransmission.FIXED_TRANSMISSION
+new_config.TRANSMISSION_MODE.WORPeriod = WorPeriod.WOR_1500_010
+new_config.TRANSMISSION_MODE.enableLBT = LbtEnableByte.LBT_DISABLED
+new_config.TRANSMISSION_MODE.enableRSSI = RssiEnableByte.RSSI_ENABLED
 
-configuration_to_set.CRYPT.CRYPT_H = 1
-configuration_to_set.CRYPT.CRYPT_L = 1
+new_config.CRYPT.CRYPT_H = 1
+new_config.CRYPT.CRYPT_L = 1
 
 
 # Set the new configuration on the LoRa module and print the updated configuration to the console
-code, confSetted = lora.set_configuration(configuration_to_set)
+code, confSetted = lora.set_configuration(new_config)
 print("------------- CONFIGURATION AFTER CHANGE -------------")
 print(ResponseStatusCode.get_description(code))
 print_configuration(confSetted)
@@ -86,8 +104,8 @@ print_configuration(confSetted)
 
 # Set the configuration to default values and print the updated configuration to the console
 print("------------- RESTORE ALL DEFAULT -------------")
-configuration_to_set = Configuration(MODULE_MODEL)
-code, confSetted = lora.set_configuration(configuration_to_set)
+new_config = Configuration(MODULE_MODEL)
+code, confSetted = lora.set_configuration(new_config)
 print(ResponseStatusCode.get_description(code))
 print_configuration(confSetted)
 

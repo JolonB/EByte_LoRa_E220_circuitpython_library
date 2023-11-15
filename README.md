@@ -82,34 +82,34 @@ TransModeFixedTrans:  0b0  ->  Transparent transmission (default)
 You can set only the desidered parameter, the other will be set to default value.
 
 ```python
-configuration_to_set = Configuration('400T22D')
-configuration_to_set.ADDL = 0x02
-configuration_to_set.ADDH = 0x01
-configuration_to_set.CHAN = 23
+new_config = Configuration('400T22D')
+new_config.ADDL = 0x02
+new_config.ADDH = 0x01
+new_config.CHAN = 23
 
-configuration_to_set.SPED.airDataRate = AirDataRate.AIR_DATA_RATE_100_96
-configuration_to_set.SPED.uartParity = UARTParity.MODE_00_8N1
-configuration_to_set.SPED.uartBaudRate = UARTBaudRate.BPS_9600
+new_config.SPED.airDataRate = AirDataRate.AIR_DATA_RATE_100_96
+new_config.SPED.uartParity = UARTParity.MODE_00_8N1
+new_config.SPED.uartBaudRate = UARTBaudRate.BPS_9600
 
-configuration_to_set.OPTION.transmissionPower = TransmissionPower('400T22D').\
+new_config.OPTION.transmissionPower = TransmissionPower('400T22D').\
                                                     get_transmission_power().POWER_10
 # or
-# configuration_to_set.OPTION.transmissionPower = TransmissionPower22.POWER_10
+# new_config.OPTION.transmissionPower = TransmissionPower22.POWER_10
 
-configuration_to_set.OPTION.RSSIAmbientNoise = RssiAmbientNoiseEnable.RSSI_AMBIENT_NOISE_ENABLED
-configuration_to_set.OPTION.subPacketSetting = SubPacketSetting.SPS_064_10
+new_config.OPTION.RSSIAmbientNoise = RssiAmbientNoiseEnable.RSSI_AMBIENT_NOISE_ENABLED
+new_config.OPTION.subPacketSetting = SubPacketSetting.SPS_064_10
 
-configuration_to_set.TRANSMISSION_MODE.fixedTransmission = FixedTransmission.FIXED_TRANSMISSION
-configuration_to_set.TRANSMISSION_MODE.WORPeriod = WorPeriod.WOR_1500_010
-configuration_to_set.TRANSMISSION_MODE.enableLBT = LbtEnableByte.LBT_DISABLED
-configuration_to_set.TRANSMISSION_MODE.enableRSSI = RssiEnableByte.RSSI_ENABLED
+new_config.TRANSMISSION_MODE.fixedTransmission = FixedTransmission.FIXED_TRANSMISSION
+new_config.TRANSMISSION_MODE.WORPeriod = WorPeriod.WOR_1500_010
+new_config.TRANSMISSION_MODE.enableLBT = LbtEnableByte.LBT_DISABLED
+new_config.TRANSMISSION_MODE.enableRSSI = RssiEnableByte.RSSI_ENABLED
 
-configuration_to_set.CRYPT.CRYPT_H = 1
-configuration_to_set.CRYPT.CRYPT_L = 1
+new_config.CRYPT.CRYPT_H = 1
+new_config.CRYPT.CRYPT_L = 1
 
 
 # Set the new configuration on the LoRa module and print the updated configuration to the console
-code, confSetted = lora.set_configuration(configuration_to_set)
+code, confSetted = lora.set_configuration(new_config)
 ```
 
 I create a CONSTANTS class for each parameter, here a list:
@@ -142,7 +142,7 @@ while True:
 If you want receive RSSI also you must enable it in the configuration
 
 ```python
-configuration_to_set.TRANSMISSION_MODE.enableRSSI = RssiEnableByte.RSSI_ENABLED
+new_config.TRANSMISSION_MODE.enableRSSI = RssiEnableByte.RSSI_ENABLED
 ```
 
 and set the flag to True in the receive_message method
@@ -185,7 +185,7 @@ while True:
 If you want receive RSSI also you must enable it in the configuration
 
 ```python
-configuration_to_set.TRANSMISSION_MODE.enableRSSI = RssiEnableByte.RSSI_ENABLED
+new_config.TRANSMISSION_MODE.enableRSSI = RssiEnableByte.RSSI_ENABLED
 ```
 
 and set the flag to True in the receive_dict method

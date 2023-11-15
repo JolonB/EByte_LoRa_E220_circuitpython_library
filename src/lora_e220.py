@@ -35,34 +35,52 @@
 # THE SOFTWARE.
 #############################################################################################
 
-from lora_e220_constants import UARTParity, UARTBaudRate, TransmissionPower, FixedTransmission, AirDataRate, \
-    OperatingFrequency, LbtEnableByte, WorPeriod, RssiEnableByte, RssiAmbientNoiseEnable, SubPacketSetting
-from lora_e220_operation_constant import ResponseStatusCode, ModeType, ProgramCommand, SerialUARTBaudRate, \
-    PacketLength, RegisterAddress
+import json
+import re
 
+import adafruit_ticks as ticks
 import busio
 import digitalio
-import re
-import adafruit_ticks as ticks
-import json
+
+from lora_e220_constants import (
+    AirDataRate,
+    FixedTransmission,
+    LbtEnableByte,
+    OperatingFrequency,
+    RssiAmbientNoiseEnable,
+    RssiEnableByte,
+    SubPacketSetting,
+    TransmissionPower,
+    UARTBaudRate,
+    UARTParity,
+    WorPeriod,
+)
+from lora_e220_operation_constant import (
+    ModeType,
+    PacketLength,
+    ProgramCommand,
+    RegisterAddress,
+    ResponseStatusCode,
+    SerialUARTBaudRate,
+)
 
 
 class Logger:
     def __init__(self, enable_debug):
         self.enable_debug = enable_debug
-        self.name = ''
+        self.name = ""
 
     def debug(self, msg, *args):
         if self.enable_debug:
-            print(self.name, ' DEBUG ', msg, *args)
+            print(self.name, " DEBUG ", msg, *args)
 
     def info(self, msg, *args):
         if self.enable_debug:
-            print(self.name, ' INFO ', msg, *args)
+            print(self.name, " INFO ", msg, *args)
 
     def error(self, msg, *args):
         if self.enable_debug:
-            print(self.name, ' ERROR ', msg, *args)
+            print(self.name, " ERROR ", msg, *args)
 
     def getLogger(self, name):
         self.name = name
@@ -122,13 +140,17 @@ class Option:
     def __init__(self, model):
         self.model = model
 
-        self.transmissionPower = TransmissionPower(self.model).get_transmission_power().get_default_value()
+        self.transmissionPower = (
+            TransmissionPower(self.model).get_transmission_power().get_default_value()
+        )
         self.reserved = 0
         self.RSSIAmbientNoise = RssiAmbientNoiseEnable.RSSI_AMBIENT_NOISE_DISABLED
         self.subPacketSetting = SubPacketSetting.SPS_200_00
 
     def get_transmission_power_description(self):
-        return TransmissionPower(self.model).get_transmission_power_description(self.transmissionPower)
+        return TransmissionPower(self.model).get_transmission_power_description(
+            self.transmissionPower
+        )
 
     def get_RSSI_ambient_noise_enable(self):
         return RssiAmbientNoiseEnable.get_description(self.RSSIAmbientNoise)
@@ -183,7 +205,7 @@ class Configuration:
         return self.model
 
     def to_hex_string(self):
-        return ''.join(['0x{:02X} '.format(x) for x in self.to_hex_array()])
+        return "".join(["0x{:02X} ".format(x) for x in self.to_hex_array()])
 
     def to_bytes(self):
         hexarray = self.to_hex_array()
@@ -220,22 +242,31 @@ class Configuration:
         self.CRYPT.CRYPT_L = hex_array[10]
 
     def to_hex_array(self):
-        return [self._COMMAND,
-                self._STARTING_ADDRESS,
-                self._LENGTH,
-                self.ADDH,
-                self.ADDL,
-                self.SPED.airDataRate | (self.SPED.uartParity << 3) | (self.SPED.uartBaudRate << 5),
-                self.OPTION.transmissionPower | (self.OPTION.RSSIAmbientNoise << 5) | (
-                            self.OPTION.subPacketSetting << 6),
-                self.CHAN,
-                self.TRANSMISSION_MODE.WORPeriod | (self.TRANSMISSION_MODE.enableLBT << 4) | (
-                        self.TRANSMISSION_MODE.fixedTransmission << 6) | (self.TRANSMISSION_MODE.enableRSSI << 7),
-                self.CRYPT.CRYPT_H,
-                self.CRYPT.CRYPT_L]
+        return [
+            self._COMMAND,
+            self._STARTING_ADDRESS,
+            self._LENGTH,
+            self.ADDH,
+            self.ADDL,
+            self.SPED.airDataRate
+            | (self.SPED.uartParity << 3)
+            | (self.SPED.uartBaudRate << 5),
+            self.OPTION.transmissionPower
+            | (self.OPTION.RSSIAmbientNoise << 5)
+            | (self.OPTION.subPacketSetting << 6),
+            self.CHAN,
+            self.TRANSMISSION_MODE.WORPeriod
+            | (self.TRANSMISSION_MODE.enableLBT << 4)
+            | (self.TRANSMISSION_MODE.fixedTransmission << 6)
+            | (self.TRANSMISSION_MODE.enableRSSI << 7),
+            self.CRYPT.CRYPT_H,
+            self.CRYPT.CRYPT_L,
+        ]
 
     def from_hex_string(self, hex_string):
-        self.from_hex_array([int(hex_string[i:i + 2], 16) for i in range(0, len(hex_string), 2)])
+        self.from_hex_array(
+            [int(hex_string[i : i + 2], 16) for i in range(0, len(hex_string), 2)]
+        )
 
     def from_bytes(self, bytes):
         self.from_hex_array([x for x in bytes])
@@ -243,34 +274,82 @@ class Configuration:
 
 def print_configuration(configuration):
     print("----------------------------------------")
-    print("HEAD : ", hex(configuration._COMMAND), " ", hex(configuration._STARTING_ADDRESS), " ",
-          hex(configuration._LENGTH))
+    print(
+        "HEAD : ",
+        hex(configuration._COMMAND),
+        " ",
+        hex(configuration._STARTING_ADDRESS),
+        " ",
+        hex(configuration._LENGTH),
+    )
     print("")
     print("AddH : ", hex(configuration.ADDH))
     print("AddL : ", hex(configuration.ADDL))
     print("")
     print("Chan : ", str(configuration.CHAN), " -> ", configuration.get_frequency())
     print("")
-    print("SpeedParityBit : ", bin(configuration.SPED.uartParity), " -> ",
-          configuration.SPED.get_UART_parity_description())
-    print("SpeedUARTDataRate : ", bin(configuration.SPED.uartBaudRate), " -> ", configuration.SPED.get_UART_baud_rate())
-    print("SpeedAirDataRate : ", bin(configuration.SPED.airDataRate), " -> ", configuration.SPED.get_air_data_rate())
+    print(
+        "SpeedParityBit : ",
+        bin(configuration.SPED.uartParity),
+        " -> ",
+        configuration.SPED.get_UART_parity_description(),
+    )
+    print(
+        "SpeedUARTDataRate : ",
+        bin(configuration.SPED.uartBaudRate),
+        " -> ",
+        configuration.SPED.get_UART_baud_rate(),
+    )
+    print(
+        "SpeedAirDataRate : ",
+        bin(configuration.SPED.airDataRate),
+        " -> ",
+        configuration.SPED.get_air_data_rate(),
+    )
     print("")
-    print("OptionSubPacketSett : ", bin(configuration.OPTION.subPacketSetting), " -> ",
-          configuration.OPTION.get_sub_packet_setting())
-    print("OptionTranPower : ", bin(configuration.OPTION.transmissionPower), " -> ",
-          configuration.OPTION.get_transmission_power_description())
-    print("OptionRSSIAmbientNo : ", bin(configuration.OPTION.RSSIAmbientNoise), " -> ",
-          configuration.OPTION.get_RSSI_ambient_noise_enable())
+    print(
+        "OptionSubPacketSett : ",
+        bin(configuration.OPTION.subPacketSetting),
+        " -> ",
+        configuration.OPTION.get_sub_packet_setting(),
+    )
+    print(
+        "OptionTranPower : ",
+        bin(configuration.OPTION.transmissionPower),
+        " -> ",
+        configuration.OPTION.get_transmission_power_description(),
+    )
+    print(
+        "OptionRSSIAmbientNo : ",
+        bin(configuration.OPTION.RSSIAmbientNoise),
+        " -> ",
+        configuration.OPTION.get_RSSI_ambient_noise_enable(),
+    )
     print("")
-    print("TransModeWORPeriod : ", bin(configuration.TRANSMISSION_MODE.WORPeriod), " -> ",
-          configuration.TRANSMISSION_MODE.get_WOR_period_description())
-    print("TransModeEnableLBT : ", bin(configuration.TRANSMISSION_MODE.enableLBT), " -> ",
-          configuration.TRANSMISSION_MODE.get_LBT_enable_byte_description())
-    print("TransModeEnableRSSI : ", bin(configuration.TRANSMISSION_MODE.enableRSSI), " -> ",
-          configuration.TRANSMISSION_MODE.get_RSSI_enable_byte_description())
-    print("TransModeFixedTrans : ", bin(configuration.TRANSMISSION_MODE.fixedTransmission), " -> ",
-          configuration.TRANSMISSION_MODE.get_fixed_transmission_description())
+    print(
+        "TransModeWORPeriod : ",
+        bin(configuration.TRANSMISSION_MODE.WORPeriod),
+        " -> ",
+        configuration.TRANSMISSION_MODE.get_WOR_period_description(),
+    )
+    print(
+        "TransModeEnableLBT : ",
+        bin(configuration.TRANSMISSION_MODE.enableLBT),
+        " -> ",
+        configuration.TRANSMISSION_MODE.get_LBT_enable_byte_description(),
+    )
+    print(
+        "TransModeEnableRSSI : ",
+        bin(configuration.TRANSMISSION_MODE.enableRSSI),
+        " -> ",
+        configuration.TRANSMISSION_MODE.get_RSSI_enable_byte_description(),
+    )
+    print(
+        "TransModeFixedTrans : ",
+        bin(configuration.TRANSMISSION_MODE.fixedTransmission),
+        " -> ",
+        configuration.TRANSMISSION_MODE.get_fixed_transmission_description(),
+    )
     print("----------------------------------------")
 
 
@@ -305,13 +384,15 @@ class ModuleInformation:
         self.features = hex_array[5]
 
     def to_hex_string(self):
-        return ''.join(['{:02X}'.format(x) for x in self.to_hex_array()])
+        return "".join(["{:02X}".format(x) for x in self.to_hex_array()])
 
     def to_bytes(self):
         return bytes(self.to_hex_array())
 
     def from_hex_string(self, hex_string):
-        self.from_hex_array([int(hex_string[i:i + 2], 16) for i in range(0, len(hex_string), 2)])
+        self.from_hex_array(
+            [int(hex_string[i : i + 2], 16) for i in range(0, len(hex_string), 2)]
+        )
 
     def from_bytes(self, bytes):
         self.from_hex_array([x for x in bytes])
@@ -319,16 +400,23 @@ class ModuleInformation:
 
 class LoRaE220:
     # now the constructor that receive directly the UART object
-    def __init__(self, model, uart, aux_pin=None, m0_pin=None, m1_pin=None,
-                 uart_baudrate=SerialUARTBaudRate.BPS_RATE_9600):
+    def __init__(
+        self,
+        model,
+        uart,
+        aux_pin=None,
+        m0_pin=None,
+        m1_pin=None,
+        uart_baudrate=SerialUARTBaudRate.BPS_RATE_9600,
+    ):
         self.uart = uart
         self.model = model
 
-        pattern = '^(230|400|900)(T|R|MM|M)(22|30)[SD]$'
+        pattern = "^(230|400|900)(T|R|MM|M)(22|30)[SD]$"
 
         model_regex = re.compile(pattern)
         if not model_regex.match(model):
-            raise ValueError('Invalid model')
+            raise ValueError("Invalid model")
 
         self.aux_pin = aux_pin
         self.m0_pin = m0_pin
@@ -344,7 +432,9 @@ class LoRaE220:
     # TODO is this even a good way to do it???
     @staticmethod
     def get_uart(tx, rx, *, baudrate=9600, uart_parity=UARTParity.MODE_00_8N1):
-        return busio.UART(tx, rx, baudrate=baudrate, parity=UARTParity.get_uart_value(uart_parity))
+        return busio.UART(
+            tx, rx, baudrate=baudrate, parity=UARTParity.get_uart_value(uart_parity)
+        )
 
     def begin(self):
         self.uart.baudrate = self.uart_baudrate
@@ -377,7 +467,8 @@ class LoRaE220:
 
         if self.m0 is None and self.m1 is None:
             logger.debug(
-                "The M0 and M1 pins are not set, which means that you are connecting the pins directly as you need!")
+                "The M0 and M1 pins are not set, which means that you are connecting the pins directly as you need!"
+            )
         else:
             if mode == ModeType.MODE_0_NORMAL:
                 # Mode 0 | normal operation
@@ -445,11 +536,16 @@ class LoRaE220:
         return result
 
     def check_UART_configuration(self, mode) -> ResponseStatusCode:
-        if mode == ModeType.MODE_3_PROGRAM and self.uart_baudrate != SerialUARTBaudRate.BPS_RATE_9600:
+        if (
+            mode == ModeType.MODE_3_PROGRAM
+            and self.uart_baudrate != SerialUARTBaudRate.BPS_RATE_9600
+        ):
             return ResponseStatusCode.ERR_E220_WRONG_UART_CONFIG
         return ResponseStatusCode.E220_SUCCESS
 
-    def set_configuration(self, configuration, permanentConfiguration=True) -> (ResponseStatusCode, Configuration):
+    def set_configuration(
+        self, configuration, permanentConfiguration=True
+    ) -> (ResponseStatusCode, Configuration):
         # code = ResponseStatusCode.E220_SUCCESS
         code = self.check_UART_configuration(ModeType.MODE_3_PROGRAM)
         if code != ResponseStatusCode.E220_SUCCESS:
@@ -469,7 +565,11 @@ class LoRaE220:
             configuration._COMMAND = ProgramCommand.WRITE_CFG_PWR_DWN_LOSE
 
         data = configuration.to_bytes()
-        logger.debug("Writing configuration: {} size {}".format(configuration.to_hex_string(), len(data)))
+        logger.debug(
+            "Writing configuration: {} size {}".format(
+                configuration.to_hex_string(), len(data)
+            )
+        )
 
         len_writed = self.uart.write(data)
         if len_writed != len(data):
@@ -484,7 +584,7 @@ class LoRaE220:
         logger.debug("data: {}".format(data))
         logger.debug("data len: {}".format(len(data)))
 
-        if data is None or len(data) != PacketLength.PL_CONFIGURATION+3:
+        if data is None or len(data) != PacketLength.PL_CONFIGURATION + 3:
             code = ResponseStatusCode.ERR_E220_DATA_SIZE_NOT_MATCH
             return code, None
 
@@ -494,9 +594,11 @@ class LoRaE220:
 
         if ProgramCommand.WRONG_FORMAT == configuration._COMMAND:
             code = ResponseStatusCode.ERR_E220_WRONG_FORMAT
-        if ProgramCommand.RETURNED_COMMAND != configuration._COMMAND or \
-                RegisterAddress.REG_ADDRESS_CFG != configuration._STARTING_ADDRESS or \
-                PacketLength.PL_CONFIGURATION != configuration._LENGTH:
+        if (
+            ProgramCommand.RETURNED_COMMAND != configuration._COMMAND
+            or RegisterAddress.REG_ADDRESS_CFG != configuration._STARTING_ADDRESS
+            or PacketLength.PL_CONFIGURATION != configuration._LENGTH
+        ):
             code = ResponseStatusCode.ERR_E220_HEAD_NOT_RECOGNIZED
 
         self.clean_UART_buffer()
@@ -526,10 +628,11 @@ class LoRaE220:
         self.write_program_command(
             ProgramCommand.READ_CONFIGURATION,
             RegisterAddress.REG_ADDRESS_CFG,
-            PacketLength.PL_CONFIGURATION)
+            PacketLength.PL_CONFIGURATION,
+        )
 
         data = self.uart.read()
-        if data is None or len(data) != PacketLength.PL_CONFIGURATION+3:
+        if data is None or len(data) != PacketLength.PL_CONFIGURATION + 3:
             code = ResponseStatusCode.ERR_E220_DATA_SIZE_NOT_MATCH
             return code, None
 
@@ -544,9 +647,11 @@ class LoRaE220:
         if ProgramCommand.WRONG_FORMAT == configuration._COMMAND:
             code = ResponseStatusCode.ERR_E220_WRONG_FORMAT
 
-        if ProgramCommand.RETURNED_COMMAND != configuration._COMMAND or \
-                RegisterAddress.REG_ADDRESS_CFG != configuration._STARTING_ADDRESS or \
-                PacketLength.PL_CONFIGURATION != configuration._LENGTH:
+        if (
+            ProgramCommand.RETURNED_COMMAND != configuration._COMMAND
+            or RegisterAddress.REG_ADDRESS_CFG != configuration._STARTING_ADDRESS
+            or PacketLength.PL_CONFIGURATION != configuration._LENGTH
+        ):
             code = ResponseStatusCode.ERR_E220_HEAD_NOT_RECOGNIZED
 
         return code, configuration
@@ -562,7 +667,10 @@ class LoRaE220:
             return code, None
 
         self.write_program_command(
-            ProgramCommand.READ_CONFIGURATION, RegisterAddress.REG_ADDRESS_PID, PacketLength.PL_PID)
+            ProgramCommand.READ_CONFIGURATION,
+            RegisterAddress.REG_ADDRESS_PID,
+            PacketLength.PL_PID,
+        )
 
         module_information = ModuleInformation()
         data = self.uart.read(4)
@@ -582,9 +690,11 @@ class LoRaE220:
 
         if ProgramCommand.WRONG_FORMAT == module_information._COMMAND:
             code = ResponseStatusCode.ERR_E220_WRONG_FORMAT
-        if ProgramCommand.RETURNED_COMMAND != module_information._COMMAND or \
-                RegisterAddress.REG_ADDRESS_PID != module_information._STARTING_ADDRESS or \
-                PacketLength.PL_PID != module_information._LENGTH:
+        if (
+            ProgramCommand.RETURNED_COMMAND != module_information._COMMAND
+            or RegisterAddress.REG_ADDRESS_PID != module_information._STARTING_ADDRESS
+            or PacketLength.PL_PID != module_information._LENGTH
+        ):
             code = ResponseStatusCode.ERR_E220_HEAD_NOT_RECOGNIZED
 
         return code, module_information
@@ -601,7 +711,9 @@ class LoRaE220:
                 data[i] = data[i] % 256
         return data
 
-    def receive_dict(self, rssi=False, delimiter=None, size=None) -> (ResponseStatusCode, any, int or None):
+    def receive_dict(
+        self, rssi=False, delimiter=None, size=None
+    ) -> (ResponseStatusCode, any, int or None):
         code, msg, rssi_value = self.receive_message(rssi, delimiter, size)
         if code != ResponseStatusCode.E220_SUCCESS:
             return code, None, None
@@ -632,10 +744,13 @@ class LoRaE220:
                 data = data[:-1]  # remove rssi from data
 
         if data is None or len(data) == 0:
-            return (ResponseStatusCode.ERR_E220_DATA_SIZE_NOT_MATCH, None, None) \
-                if rssi else (ResponseStatusCode.ERR_E220_DATA_SIZE_NOT_MATCH, None)
+            return (
+                (ResponseStatusCode.ERR_E220_DATA_SIZE_NOT_MATCH, None, None)
+                if rssi
+                else (ResponseStatusCode.ERR_E220_DATA_SIZE_NOT_MATCH, None)
+            )
 
-        data = data.decode('utf-8')
+        data = data.decode("utf-8")
         msg = data
 
         return (code, msg, rssi_value) if rssi else (code, msg)
@@ -643,8 +758,8 @@ class LoRaE220:
     def clean_UART_buffer(self):
         self.uart.read()
 
-    def _read_until(self, terminator='\n') -> bytes:
-        line = b''
+    def _read_until(self, terminator="\n") -> bytes:
+        line = b""
         while True:
             c = self.uart.read(1)
             if c == terminator:
@@ -673,22 +788,24 @@ class LoRaE220:
         message = json.dumps(dict_message)
         return self._send_message(message)
 
-    def _send_message(self, message, ADDH=None, ADDL=None, CHAN=None) -> ResponseStatusCode:
+    def _send_message(
+        self, message, ADDH=None, ADDL=None, CHAN=None
+    ) -> ResponseStatusCode:
         result = ResponseStatusCode.E220_SUCCESS
 
-        size_ = len(message.encode('utf-8'))
+        size_ = len(message.encode("utf-8"))
         if size_ > MAX_SIZE_TX_PACKET + 2:
             return ResponseStatusCode.ERR_E220_PACKET_TOO_BIG
 
         if ADDH is not None and ADDL is not None and CHAN is not None:
             if isinstance(message, str):
-                message = message.encode('utf-8')
+                message = message.encode("utf-8")
             dataarray = bytes([ADDH, ADDL, CHAN]) + message
             dataarray = LoRaE220._normalize_array(dataarray)
             lenMS = self.uart.write(bytes(dataarray))
             size_ += 3
         elif isinstance(message, str):
-            lenMS = self.uart.write(message.encode('utf-8'))
+            lenMS = self.uart.write(message.encode("utf-8"))
         else:
             lenMS = self.uart.write(bytes(message))
 

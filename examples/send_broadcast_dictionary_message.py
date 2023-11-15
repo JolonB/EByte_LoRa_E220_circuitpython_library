@@ -11,11 +11,17 @@
 import board
 from busio import UART
 
-from lora_e220 import LoRaE220, Configuration
+from examples.example_config import (
+    LORA_AUX,
+    LORA_M0,
+    LORA_M1,
+    MODULE_MODEL,
+    UART_RX,
+    UART_TX,
+)
+from lora_e220 import Configuration, LoRaE220
 from lora_e220_constants import FixedTransmission, RssiEnableByte
 from lora_e220_operation_constant import ResponseStatusCode
-
-from examples.example_config import MODULE_MODEL, UART_TX, UART_RX, LORA_AUX, LORA_M0, LORA_M1
 
 # Initialize the LoRaE220 module
 uart = UART(UART_TX, UART_RX, baudrate=9600)
@@ -25,17 +31,17 @@ print("Initialization: {}".format(ResponseStatusCode.get_description(code)))
 
 # Set the configuration to default values and print the updated configuration to the console
 # Not needed if already configured
-configuration_to_set = Configuration(MODULE_MODEL)
-# configuration_to_set.ADDL = 0x02 # Address of this sender no receiver
-configuration_to_set.TRANSMISSION_MODE.fixedTransmission = FixedTransmission.FIXED_TRANSMISSION
+new_config = Configuration(MODULE_MODEL)
+# new_config.ADDL = 0x02 # Address of this sender no receiver
+new_config.TRANSMISSION_MODE.fixedTransmission = FixedTransmission.FIXED_TRANSMISSION
 # To enable RSSI, you must also enable RSSI on receiver
-configuration_to_set.TRANSMISSION_MODE.enableRSSI = RssiEnableByte.RSSI_ENABLED
+new_config.TRANSMISSION_MODE.enableRSSI = RssiEnableByte.RSSI_ENABLED
 
-code, confSetted = lora.set_configuration(configuration_to_set)
+code, confSetted = lora.set_configuration(new_config)
 print("Set configuration: {}".format(ResponseStatusCode.get_description(code)))
 
 # Send a dictionary message (fixed)
-data = {'key1': 'value1', 'key2': 'value2'}
+data = {"key1": "value1", "key2": "value2"}
 code = lora.send_broadcast_dict(23, data)
 # The receiver must be configured with CHAN = 23
 print("Send message: {}".format(ResponseStatusCode.get_description(code)))

@@ -13,10 +13,16 @@
 import board
 from busio import UART
 
+from examples.example_config import (
+    LORA_AUX,
+    LORA_M0,
+    LORA_M1,
+    MODULE_MODEL,
+    UART_RX,
+    UART_TX,
+)
 from lora_e220 import LoRaE220, print_configuration
 from lora_e220_operation_constant import ResponseStatusCode
-
-from examples.example_config import MODULE_MODEL, UART_TX, UART_RX, LORA_AUX, LORA_M0, LORA_M1
 
 uart = UART(UART_TX, UART_RX, baudrate=9600)
 
