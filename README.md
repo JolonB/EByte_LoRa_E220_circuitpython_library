@@ -1,11 +1,16 @@
 # EBYTE LoRa E220 devices CircuitPython library (LLCC68)
 
-## Changelog
+## Setup
 
-- 2023-11-14 1.0.0 Functioning and tested on ESP32 and RPi Pico using 900T22D module.
-- 2023-11-09 0.0.1 Working library. Not fully tested.
+If your device supports [`circup`](https://github.com/adafruit/circup), you can simply run
 
-<!-- ### Installation
+```shell
+circup install -r requirements.txt
+```
+
+If it doesn't support `circup` (for example, ESP32 due to lack of native USB), you can follow [these instructions](https://learn.adafruit.com/circuitpython-with-esp32-quick-start/overview) and then copy [this file](https://raw.githubusercontent.com/adafruit/Adafruit_CircuitPython_Ticks/1.0.12/adafruit_ticks.py) into the filesystem.
+
+<!-- ## Installation
 To install the library execute the following command:
 
 ```bash
@@ -206,3 +211,8 @@ fixed
 
 This is a port of the [MicroPython library for EBYTE LoRa E220 devices](https://github.com/xreef/EByte_LoRa_E220_micropython_library) (which itself is a port from the [Arduino version](https://github.com/xreef/EByte_LoRa_E220_Series_Library)) to CircuitPython.
 Consider looking at those repositories for further information about the hardware.
+
+## Changelog
+
+- 2023-11-14 1.0.0 Functioning and tested on ESP32 and RPi Pico using 900T22D module.
+- 2023-11-09 0.0.1 Working library. Not fully tested.
